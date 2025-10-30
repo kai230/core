@@ -8,6 +8,11 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+
+   ainew_requirements
+
+.. toctree::
+   :maxdepth: 2
    :glob:
 
    api/*
