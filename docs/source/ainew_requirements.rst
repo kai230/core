@@ -371,3 +371,410 @@ AI 工具导航与资讯网站需求文档
 
   - 平均页面停留时间。
   - 跳出率。
+
+7. 网站项目结构与实现
+------------------
+
+7.1 文件与目录结构
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+   ainew/
+     ├── archetypes/
+     │   └── default.md
+     ├── assets/
+     ├── config/
+     │   └── _default/
+     │       ├── config.toml
+     │       ├── menus.toml
+     │       └── params.toml
+     ├── content/
+     │   ├── ai-news/
+     │   ├── ai-tools/
+     │   ├── mcp-services/
+     │   └── models/
+     ├── data/
+     │   └── curated/
+     ├── layouts/
+     │   ├── _default/
+     │   ├── ai-news/
+     │   ├── ai-tools/
+     │   ├── mcp-services/
+     │   └── models/
+     ├── static/
+     │   ├── images/
+     │   └── uploads/
+     ├── themes/
+     │   └── ainew/
+     ├── scripts/
+     │   └── update_content.py
+     ├── .github/
+     │   └── workflows/
+     │       └── update.yml
+     └── package.json
+
+- ``archetypes/``：定义默认 Front Matter，保证新建内容字段齐全。
+- ``assets/`` 与 ``static/``：存放全局样式、脚本和静态资源，配合 Hugo Pipes 进行压缩与指纹化。
+- ``config/_default/``：拆分配置文件，方便根据不同环境覆盖参数。
+- ``content/``：按照业务域划分内容目录，便于 Hugo 自动生成语义化 URL。
+- ``layouts/``：存放全站模板与模块化 Partial，例如导航、页脚、结构化数据等。
+- ``themes/ainew/``：可从开源主题衍生，集中管理组件与样式，以便后续拆分为独立主题仓库。
+- ``scripts/update_content.py``：负责抓取、去重、格式化并写入 Markdown。
+- ``.github/workflows/update.yml``：调度自动化抓取、构建与部署流程。
+- ``package.json``：集中管理前端构建任务（如 TailwindCSS、PostCSS、图像压缩）。
+
+7.2 Hugo 基础配置
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: toml
+
+   baseURL = "https://ainew.io/"
+   languageCode = "zh-cn"
+   title = "AInew — AI 工具导航与资讯"
+   theme = "ainew"
+   paginate = 12
+   enableRobotsTXT = true
+   defaultContentLanguage = "zh-cn"
+   hasCJKLanguage = true
+   summaryLength = 180
+   canonifyURLs = true
+
+   [outputs]
+     home = ["HTML", "RSS", "SITEMAP", "JSON"]
+     section = ["HTML", "RSS"]
+     taxonomy = ["HTML"]
+     term = ["HTML", "RSS"]
+
+   [taxonomies]
+     category = "categories"
+     tag = "tags"
+     pricing = "pricings"
+
+   [params]
+     siteDescription = "AI 工具与资讯一站式导航，覆盖工具、行业新闻、热门大模型与云服务。"
+     featuredToolsLimit = 6
+     featuredModelsLimit = 6
+     latestNewsLimit = 8
+     socialPreviewImage = "images/og-default.png"
+     githubRepo = "your-name/ainew"
+     contactEmail = "hello@ainew.io"
+
+   [markup.goldmark.renderer]
+     unsafe = true
+
+   [[menus.main]]
+     name = "AI 工具"
+     url = "/ai-tools/"
+     weight = 10
+
+   [[menus.main]]
+     name = "资讯"
+     url = "/ai-news/"
+     weight = 20
+
+   [[menus.main]]
+     name = "热门大模型"
+     url = "/models/"
+     weight = 30
+
+   [[menus.main]]
+     name = "MCP 导航"
+     url = "/mcp-services/"
+     weight = 40
+
+   [[params.schema]]
+     type = "Organization"
+     name = "AInew"
+     url = "https://ainew.io/"
+     logo = "https://ainew.io/images/logo.png"
+
+7.3 内容类型与前置数据
+~~~~~~~~~~~~~~~~~~~~~~
+
+AI 工具（``content/ai-tools/``）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- 目标：提供统一的工具介绍页面，强调适用场景、优势与价格。
+- URL 结构：``/ai-tools/<slug>/``。
+
+.. code-block:: yaml
+
+   ---
+   title: "OpenAI ChatGPT"
+   slug: "chatgpt"
+   description: "基于 GPT-4 的智能对话助手，支持多轮问答与插件扩展。"
+   link: "https://chat.openai.com/"
+   price: "freemium"
+   categories:
+     - 文本创作
+     - 办公效率
+   tags:
+     - GPT
+     - Chatbot
+   platforms:
+     - Web
+     - iOS
+     - Android
+   use_cases:
+     - 文案撰写
+     - 技术问答
+   hero_image: "https://cdn.example.com/images/chatgpt.png"
+   rating: 4.7
+   schema_type: "SoftwareApplication"
+   last_synced: 2024-10-01
+   draft: false
+   ---
+
+   ## 核心亮点
+   - 结合插件市场，调用第三方服务解决复杂任务。
+   - 支持多种语言与代码生成场景。
+
+AI 资讯（``content/ai-news/``）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- 目标：收录每日行业动态与趋势分析。
+- URL 结构：``/ai-news/<yyyy>/<mm>/<slug>/``。
+
+.. code-block:: yaml
+
+   ---
+   title: "OpenAI 发布 GPT-4.5，推理速度提升 30%"
+   slug: "openai-releases-gpt-4-5"
+   date: 2024-10-01T08:00:00+08:00
+   author: "AInew 编辑部"
+   summary: "最新模型在推理速度与多模态理解上实现显著提升。"
+   source: "TechCrunch"
+   link: "https://techcrunch.com/..."
+   tags:
+     - OpenAI
+     - 大模型
+   schema_type: "Article"
+   featured_image: "https://cdn.example.com/news/openai-gpt45.jpg"
+   draft: false
+   ---
+
+   正文采用 Markdown 编写，可嵌入 ``{{< figure >}}`` 与 ``{{< youtube >}}`` 等短代码。
+
+热门大模型（``content/models/``）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- 目标：展示领先模型的能力指标与应用案例。
+- URL 结构：``/models/<slug>/``。
+
+.. code-block:: yaml
+
+   ---
+   title: "GPT-4.5 Turbo"
+   slug: "gpt-4-5-turbo"
+   vendor: "OpenAI"
+   release_date: 2024-09-28
+   parameters: "1.8T"
+   input_modalities:
+     - 文本
+     - 图像
+   benchmarks:
+     - name: "MMLU"
+       score: 90.1
+     - name: "BBH"
+       score: 85.4
+   strengths:
+     - "推理速度提升 30%"
+     - "插件生态更加成熟"
+   limitations:
+     - "暂不支持离线部署"
+   schema_type: "TechArticle"
+   documentation: "https://platform.openai.com/docs/models"
+   draft: false
+   ---
+
+MCP 服务（``content/mcp-services/``）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- 目标：帮助用户比较云端 AI 服务的能力、定价与集成方式。
+- URL 结构：``/mcp-services/<provider>/<slug>/``。
+
+.. code-block:: yaml
+
+   ---
+   title: "AWS SageMaker"
+   slug: "aws-sagemaker"
+   provider: "Amazon Web Services"
+   tiers:
+     - name: "按需训练"
+       price: "按使用计费"
+     - name: "Serverless Inference"
+       price: "按调用计费"
+   regions:
+     - us-east-1
+     - eu-west-1
+   integrations:
+     - "Amazon S3"
+     - "AWS Lambda"
+   use_cases:
+     - "大规模模型训练"
+     - "批量推理"
+   schema_type: "Service"
+   service_level: "企业级"
+   contact: "https://aws.amazon.com/sagemaker/pricing/"
+   draft: false
+   ---
+
+7.4 模板与组件划分
+~~~~~~~~~~~~~~~~~~
+
+- ``layouts/_default/baseof.html``：定义全局骨架，注入导航、页脚、结构化数据与追踪脚本。
+- ``layouts/partials/structured-data.html``：根据 ``schema_type`` 渲染 JSON-LD。
+- ``layouts/ai-tools/single.html``：呈现工具详情页，包含评价、按钮与相似工具推荐。
+- ``layouts/partials/search-form.html``：站内搜索与筛选 UI，复用在工具列表页与首页。
+- ``layouts/index.html``：首页聚合最新工具、资讯、热门模型与精选服务。
+- ``layouts/_default/list.html``：统一处理分页、面包屑与 Meta 标签。
+
+8. 自动化与数据抓取
+------------------
+
+8.1 ``scripts/update_content.py`` 实现要点
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   import json
+   import logging
+   import os
+   from datetime import datetime
+   from pathlib import Path
+   from typing import Iterable, Optional
+
+   import feedparser
+   import requests
+   import yaml
+   from slugify import slugify
+
+   BASE_DIR = Path(__file__).resolve().parent.parent
+   CONTENT_DIR = BASE_DIR / "content"
+   DATA_CONFIG = BASE_DIR / "config" / "feeds.json"
+
+   logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+
+   def load_sources() -> dict:
+       with DATA_CONFIG.open(encoding="utf-8") as fh:
+           return json.load(fh)
+
+   def fetch_feed(url: str) -> Iterable[feedparser.FeedParserDict]:
+       logging.info("Fetching feed %s", url)
+       feed = feedparser.parse(url)
+       return feed.entries
+
+   def fetch_json(url: str, headers: Optional[dict] = None) -> dict:
+       response = requests.get(url, headers=headers, timeout=20)
+       response.raise_for_status()
+       return response.json()
+
+   def write_markdown(directory: Path, slug: str, front_matter: dict, body: str) -> None:
+       directory.mkdir(parents=True, exist_ok=True)
+       filepath = directory / f"{slug}.md"
+       front_matter_text = yaml.safe_dump(
+           front_matter,
+           allow_unicode=True,
+           sort_keys=False,
+       ).strip()
+       content = f"---\n{front_matter_text}\n---\n\n{body.strip()}\n"
+       filepath.write_text(content, encoding="utf-8")
+       logging.info("Written %s", filepath)
+
+   def process_news(entry) -> None:
+       slug = slugify(entry.title)
+       front_matter = {
+           "title": entry.title,
+           "slug": slug,
+           "date": entry.get("published", datetime.utcnow().isoformat()),
+           "summary": entry.get("summary", "")[:240],
+           "link": entry.link,
+           "source": entry.get("source", {}).get("title", ""),
+           "schema_type": "Article",
+       }
+       body = entry.get("summary", "")
+       write_markdown(CONTENT_DIR / "ai-news", slug, front_matter, body)
+
+   def main() -> None:
+       sources = load_sources()
+       for rss in sources.get("rss", []):
+           for entry in fetch_feed(rss):
+               process_news(entry)
+
+   if __name__ == "__main__":
+       main()
+
+关键实践：
+
+- 使用 ``slugify`` 保证 URL 稳定性，并避免重复。
+- ``write_markdown`` 方法统一输出 Front Matter 与正文，方便拓展至工具、模型与服务。
+- 通过 ``feeds.json`` 管理数据源，支持新增 RSS/API 而无需修改脚本。
+- 结合 GitHub Actions 缓存与 ``git diff``，仅提交新增或更新的 Markdown 文件。
+
+8.2 数据源配置示例
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: json
+
+   {
+     "rss": [
+       "https://techcrunch.com/tag/artificial-intelligence/feed/",
+       "https://venturebeat.com/category/ai/feed/"
+     ],
+     "product_hunt": {
+       "url": "https://api.producthunt.com/v2/api/graphql",
+       "token_env": "PRODUCT_HUNT_TOKEN"
+     },
+     "google_news": {
+       "keyword": "artificial intelligence",
+       "region": "US"
+     },
+     "arxiv": {
+       "query": "cat:cs.AI",
+       "max_results": 25
+     }
+   }
+
+8.3 监控与告警
+~~~~~~~~~~~~~
+
+- 在 GitHub Actions 中开启 ``on: workflow_dispatch``，遇到失败可手动重试。
+- 通过 ``actions/cache`` 缓存 RSS/JSON 结果，缩短构建时间。
+- 将抓取日志输出至 ``artifacts``，便于排查失败原因。
+- 结合 UptimeRobot 或 Cronitor 监控 GitHub Pages 站点可用性。
+
+9. 本地开发与部署
+----------------
+
+9.1 环境准备
+~~~~~~~~~~~~
+
+1. 安装 ``Hugo Extended``（版本 >= 0.124）。
+2. 安装 Python 3.10+，执行 ``python -m venv .venv`` 创建虚拟环境。
+3. 在虚拟环境中运行 ``pip install -r scripts/requirements.txt``（包含 ``feedparser``、``requests``、``python-slugify``、``PyYAML`` 等依赖）。
+4. 可选：使用 ``npm`` 或 ``pnpm`` 安装前端依赖（如 TailwindCSS、Autoprefixer）。
+
+9.2 本地开发流程
+~~~~~~~~~~~~~~~~
+
+1. 运行 ``python scripts/update_content.py`` 生成最新内容。
+2. 执行 ``hugo server -D`` 启动本地开发服务器，默认地址为 ``http://localhost:1313``。
+3. 修改 ``layouts/``、``assets/`` 或 ``content/`` 后页面将热重载。
+4. 若使用 TailwindCSS，执行 ``npm run dev`` 开启监听并生成 CSS。
+
+9.3 构建与发布
+~~~~~~~~~~~~~~
+
+1. 运行 ``hugo --gc --minify`` 产出静态文件目录 ``public/``。
+2. 在本地验证核心页面：首页、工具列表、资讯列表、模型列表、MCP 服务详情。
+3. 将 ``public/`` 上传至 GitHub Pages（由 Actions 自动完成）或备份至任意对象存储。
+4. 发布后在 Google Search Console 和 Bing Webmaster 提交最新 ``sitemap.xml``。
+
+9.4 质量保障清单
+~~~~~~~~~~~~~~~~
+
+- 检查 Lighthouse 指标（Performance > 90，SEO > 90）。
+- 验证结构化数据无错误（使用 ``https://search.google.com/test/rich-results``）。
+- 确保所有外链开启 ``rel=\"noopener\"``，并在新标签页打开。
+- 针对移动端与桌面端分别进行响应式测试。
